@@ -6,7 +6,21 @@ using System.Threading.Tasks;
 
 namespace BattleshipGame
 {
-    class Ship
+    abstract class Ship
     {
+        
+        public int[] shipPosition;
+        public int[,] positionArray;
+
+        public Ship()
+        {
+            
+        }
+        
+        /*
+         Vector<int>  
+         
+          */
+        
     }
 }

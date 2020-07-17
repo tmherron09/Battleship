@@ -20,7 +20,7 @@ namespace BattleshipGame
             this.gridSize = gridSize;
             this.leftStartOfBattlefield = leftStartOfBattlefield;
             this.topStartOfBattlefield = topStartOfBattlefield;
-            battlefield = new int[400, 3];
+            battlefield = new int[gridSize*gridSize, 3];
         }
         /// <summary>
         /// Create generic 2D array of 400, for a 20 x 20 grid.
@@ -383,18 +383,30 @@ namespace BattleshipGame
             {
                 for (int x = 0; x < gridSize; x++)
                 {
-                    if (battlefield[index, 2] == 0)
+                    switch (battlefield[index, 2])
                     {
-                        field += "0";
+                        case 0:
+                            field += "0";
+                            break;
+                        case 1:
+                            field += "X";
+                            break;
+                        case 2:
+                            field += "M";
+                            break;
                     }
-                    else if (battlefield[index, 2] == 1)
-                    {
-                        field += "X";
-                    }
-                    else if (battlefield[index, 2] == 2)
-                    {
-                        field += "M";
-                    }
+                    //if (battlefield[index, 2] == 0)
+                    //{
+                    //    field += "0";
+                    //}
+                    //else if (battlefield[index, 2] == 1)
+                    //{
+                    //    field += "X";
+                    //}
+                    //else if (battlefield[index, 2] == 2)
+                    //{
+                    //    field += "M";
+                    //}
                     if (x < gridSize - 1)
                     {
                         field += "  ";
@@ -501,7 +513,6 @@ namespace BattleshipGame
                 pos++;
             }
         }
-
         public void OutlineBattlefield(int leftStart, int topStart)
         {
             Console.SetCursorPosition(leftStart, topStart);
@@ -628,7 +639,6 @@ namespace BattleshipGame
                 Console.WriteLine("|");
             }
         }
-
         //public void OutlineBattlefieldWithNumbers()
         //{
         //    int spaceing = 
