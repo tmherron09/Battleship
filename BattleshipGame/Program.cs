@@ -71,8 +71,8 @@ namespace BattleshipGame
         {
             SafeFileHandle h = CreateFile("CONOUT$", 0x40000000, 2, IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero);
             Console.CursorVisible = false;
-            int width = 80;
-            int height = 25;
+            int width = 88;
+            int height = 46;
             Console.SetWindowSize(width, height);
             Console.SetBufferSize(width, height);
             using (Stream stdout = Console.OpenStandardOutput(width * height))
