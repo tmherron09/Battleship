@@ -73,6 +73,7 @@ namespace BattleshipGame
             Console.CursorVisible = false;
             int width = 88;
             int height = 46;
+            
             Console.SetWindowSize(width, height);
             Console.SetBufferSize(width, height);
             using (Stream stdout = Console.OpenStandardOutput(width * height))

@@ -20,12 +20,13 @@ namespace BattleshipGame
         public byte[] buf;
         CharInfo[] bufField;
         public SafeFileHandle h;
+        int downCount;
 
 
         // Battlefield Display variables
         int topPad;
         int leftPad;  // left and right padding must equal width - (playfield width * square size)
-        int rightPad;  
+        int rightPad;
 
         // Selection Variables
         int selectionIndex;
@@ -44,6 +45,7 @@ namespace BattleshipGame
             bufField = new CharInfo[width * height];
             playfieldHeight = 20;
             playfieldWidth = 20;
+            downCount = 0; // test variable
         }
 
         public void RunGame()
@@ -59,8 +61,8 @@ namespace BattleshipGame
                     if (Console.KeyAvailable)
                     {
                         ConsoleKeyInfo readKey = Console.ReadKey(true);
-                        ReadPlayerInput(readKey.Key);                        
-                        
+                        ReadPlayerInput(readKey.Key);
+
                     }
 
                     // ReWrite to bufField
@@ -78,17 +80,18 @@ namespace BattleshipGame
 
         private void ReadPlayerInput(ConsoleKey readKey)
         {
+            downCount++;
             // Remove top padding and left padding to get index of 0,0 to calculate other x,y values.
-            int selectionZeroed = selectionIndex - ((topPad * width) + leftPad);
-            int displayX = selectionZeroed % (playfieldWidth * 2);
-            int displayY = (selectionZeroed / (width - leftPad)) % (width - leftPad);
+            int selectionZeroed = ((topPad * width) + leftPad);
+            int displayX = (selectionIndex % width) - leftPad;
+            int displayY = ((selectionIndex - selectionZeroed) / (width)) % width;
             int playfieldX = displayX / 2;
             int playfieldY = displayY / 2;
             if (readKey == ConsoleKey.RightArrow)
             {
-                if (playfieldX % 20 == 19)
+                if (playfieldX == 19)
                 {
-                    selectionIndex -= (playfieldWidth * 2) -2;
+                    selectionIndex -= (playfieldWidth * 2) - 2;
                 }
                 else
                 {
@@ -97,7 +100,7 @@ namespace BattleshipGame
             }
             else if (readKey == ConsoleKey.LeftArrow)
             {
-                if (playfieldX % 20 == 0)
+                if (playfieldX == 0)
                 {
                     selectionIndex += (playfieldWidth * 2) - 2;
                 }
@@ -106,41 +109,37 @@ namespace BattleshipGame
                     selectionIndex -= 2;
                 }
             }
-            //else if (readKey == ConsoleKey.UpArrow)
-            //{
-            //    if (selectionIndex <= 19)
-            //    {
-            //        selectionIndex = bufField.Length - 20 + selectionIndex;
-            //    }
-            //    else
-            //    {
-            //        selectionIndex -= 20;
-            //    }
-            //}
-            //else if (readKey == ConsoleKey.DownArrow)
-            //{
-            //    if (selectionIndex >= bufField.Length - 20)
-            //    {
-            //        selectionIndex = selectionIndex - bufField.Length + 20;
-            //    }
-            //    else
-            //    {
-            //        selectionIndex += 20;
-            //    }
-            //}
-            //else if (readKey == ConsoleKey.Enter)
-            //{
-
-            //}
+            else if (readKey == ConsoleKey.DownArrow)
+            {
+                if (playfieldY == 19)
+                {
+                    selectionIndex = selectionZeroed + displayX;
+                }
+                else
+                {
+                    selectionIndex += 2 * width;
+                }
+            }
+            else if (readKey == ConsoleKey.UpArrow)
+            {
+                if (playfieldY == 0)
+                {
+                    selectionIndex = selectionIndex + ((playfieldHeight * 2) - 2) * width;
+                }
+                else
+                {
+                    selectionIndex -= 2 * width; ;
+                }
+            }
         }
 
         private void InitializeGame()
         {
             InitializeBlankBuffer();
-            topPad = 3;
+            topPad = (height - playfieldHeight * 2) / 2;
             //leftPad = 24; // if width 88
             //rightPad = 24; // if width 88
-            leftPad = rightPad = (width - (playfieldWidth*2)) / 2; // padding is the total width - playfield * square size, divided by two.
+            leftPad = rightPad = (width - (playfieldWidth * 2)) / 2; // padding is the total width - playfield * square size, divided by two.
             selectionIndex = ((0 + topPad) * (width) + (0 + leftPad));
             //selectionIndex = 326;
         }
@@ -171,27 +170,26 @@ namespace BattleshipGame
         {
             int[] index = new int[4];
 
-            for (int i = 0; i < bufField.Length; i++)
-            {
-                for (int y = 0; y < 20; y++) // 20 = playfield height
-                {
-                    for (int x = 0; x < 20; x++) // 20 = playfield width
-                    {
-                        index = ReturnIndexSquare(x, y);
-                        
 
-                        if (index[0] == selectionIndex)
-                        {
-                            AssignColor(index, 0x0002);  // Make selection green.
-                        }
-                        else
-                        {
-                            AssignColor(index, 0x0001); // Make non-selected blue
-                        }
+            for (int y = 0; y < playfieldHeight; y++) // 20 = playfield height
+            {
+                for (int x = 0; x < playfieldWidth; x++) // 20 = playfield width
+                {
+                    index = ReturnIndexSquare(x, y);
+
+
+                    if (index[0] == selectionIndex)
+                    {
+                        AssignColor(index, 0x0002);  // Make selection green.
+                    }
+                    else
+                    {
+                        AssignColor(index, 0x0001); // Make non-selected blue
                     }
                 }
-
             }
+
+
         }
 
         public int[] ReturnIndexSquare(int x, int y)
