@@ -36,18 +36,20 @@ namespace BattleshipGame
         bool showLowerMessage;
 
         // Selection Variables
-        int selectionIndex;
+        int highlightedIndex;
+        int selectedIndex;
 
         // Playfield Variables
         int playfieldWidth;
         int playfieldHeight;
-        
+
 
         // Game variables
         List<Player> players;
         int currentPlayer;
         bool isFirstRound;
         bool isChangePlayer;
+        public SelectionState selectionState;
 
         public Game(Stream stdOut, SafeFileHandle h, int width, int height)
         {
@@ -67,6 +69,7 @@ namespace BattleshipGame
             lowerMessage = "";
             isFirstRound = true;
             currentPlayer = 0;
+            selectionState = SelectionState.Initialization;
         }
 
         public void RunGame()
@@ -92,20 +95,20 @@ namespace BattleshipGame
                     }
                     DisplayLowerMessage();
                     DrawToScreen();
-                    
-                    if(isChangePlayer)
+
+                    if (isChangePlayer)
                     {
                         currentPlayer = (currentPlayer + 1) & 0x0001;
                         isChangePlayer = false;
                     }
-                    if(isFirstRound)
+                    if (isFirstRound)
                     {
                         // Declare all ships
                         string[] ships = new string[] { "Destroyer", "Submarine", "Battleship", "Aircraft Carrier" };
                         //foreach(Player player in players)
                         // Player 1 Setup their board
                         DisplayLowerMessage("Player 1, please choose your starting locations.");
-                        DisplayRighthandMessage(ships);
+                        DisplayRighthandMessage(ships, 0x0002);
                         // Player 2 Setup their board
                         isFirstRound = false;
                     }
@@ -114,8 +117,27 @@ namespace BattleshipGame
             }
         }
 
-        
-        private void DisplayRighthandMessage(string[] displayLines)
+
+        private void DisplayRighthandMessage(string message, short color)
+        {
+            int lineStart = (topPad + (displayfieldHeight) / 3) * width;
+            int rightStart = (leftPad + (playfieldWidth * 2) + 2) + lineStart;
+            int nextIndex = 0;
+            foreach (char letter in message)
+            {
+                bufField[rightStart + nextIndex].Char.UnicodeChar = letter;
+                bufField[rightStart + nextIndex].Attributes = 0x0002;
+                nextIndex++;
+                if ((rightStart + nextIndex) % width == 0)
+                {
+                    rightStart *= width;
+                }
+            }
+            nextIndex = 0;
+            rightStart += 2 * width;
+
+        }
+        private void DisplayRighthandMessage(string[] displayLines, short color)
         {
             int lineStart = (topPad + (displayfieldHeight) / 3) * width;
             int rightStart = (leftPad + (playfieldWidth * 2) + 2) + lineStart;
@@ -133,6 +155,22 @@ namespace BattleshipGame
                 rightStart += 2 * width;
             }
         }
+        private void RemoveRighthandMessage()
+        {
+            int lineStart = (topPad + (displayfieldHeight) / 3) * width;
+            int rightStart = (leftPad + (playfieldWidth * 2) + 2) + lineStart;
+            int nextIndex = 0;
+            for (int i = 0; i < 20; i++)
+            {
+                while ((rightStart + nextIndex) % width != 0)
+                {
+                    bufField[rightStart + nextIndex].Char.UnicodeChar = ' ';
+                    nextIndex++;
+                }
+                rightStart += width;
+                nextIndex = 0;
+            }
+        }
 
         private void RemoveLowerMessage()
         {
@@ -146,11 +184,12 @@ namespace BattleshipGame
         private void DisplayLowerMessage()
         {
             int leftStart = startLocation + (width - lowerMessage.Length) / 2;
-            for(int i = 0; i < lowerMessage.Length; i++)
+            for (int i = 0; i < lowerMessage.Length; i++)
             {
                 bufField[leftStart + i].Char.UnicodeChar = lowerMessage[i];
                 bufField[leftStart + i].Attributes = 0x0008;
             }
+            showLowerMessage = true;
         }
         private void DisplayLowerMessage(string message)
         {
@@ -160,6 +199,7 @@ namespace BattleshipGame
                 bufField[leftStart + i].Char.UnicodeChar = message[i];
                 bufField[leftStart + i].Attributes = 0x0008;
             }
+            showLowerMessage = true;
         }
 
         private void ReadPlayerInput(ConsoleKey readKey)
@@ -167,63 +207,90 @@ namespace BattleshipGame
             downCount++;
             // Remove top padding and left padding to get index of 0,0 to calculate other x,y values.
             int selectionZeroed = ((topPad * width) + leftPad);
-            int displayX = (selectionIndex % width) - leftPad;
-            int displayY = ((selectionIndex - selectionZeroed) / (width)) % width;
+            int displayX = (highlightedIndex % width) - leftPad;
+            int displayY = ((highlightedIndex - selectionZeroed) / (width)) % width;
             int playfieldX = displayX / 2;
             int playfieldY = displayY / 2;
             if (readKey == ConsoleKey.RightArrow)
             {
                 if (playfieldX == 19)
                 {
-                    selectionIndex -= (playfieldWidth * 2) - 2;
+                    highlightedIndex -= (playfieldWidth * 2) - 2;
                 }
                 else
                 {
-                    selectionIndex += 2; ;
+                    highlightedIndex += 2; ;
                 }
             }
             else if (readKey == ConsoleKey.LeftArrow)
             {
                 if (playfieldX == 0)
                 {
-                    selectionIndex += (playfieldWidth * 2) - 2;
+                    highlightedIndex += (playfieldWidth * 2) - 2;
                 }
                 else
                 {
-                    selectionIndex -= 2;
+                    highlightedIndex -= 2;
                 }
             }
             else if (readKey == ConsoleKey.DownArrow)
             {
                 if (playfieldY == 19)
                 {
-                    selectionIndex = selectionZeroed + displayX;
+                    highlightedIndex = selectionZeroed + displayX;
                 }
                 else
                 {
-                    selectionIndex += 2 * width;
+                    highlightedIndex += 2 * width;
                 }
             }
             else if (readKey == ConsoleKey.UpArrow)
             {
                 if (playfieldY == 0)
                 {
-                    selectionIndex = selectionIndex + ((displayfieldHeight) - 2) * width;
+                    highlightedIndex = highlightedIndex + ((displayfieldHeight) - 2) * width;
                 }
                 else
                 {
-                    selectionIndex -= 2 * width; ;
+                    highlightedIndex -= 2 * width; ;
                 }
             }
             else if (readKey == ConsoleKey.Enter)
             {
-                lowerMessage = "Enter key pressed...";
-                showLowerMessage = true;
+                selectedIndex = highlightedIndex;
+                SelectionStateMachine();
+                
             }
             else if (readKey == ConsoleKey.Spacebar)
             {
-                showLowerMessage = false ;
+                showLowerMessage = false;
+                RemoveRighthandMessage();
                 isChangePlayer = true;
+            }
+        }
+
+        private void SelectionStateMachine()
+        {
+            switch(selectionState)
+            {
+                case SelectionState.Initialization:
+                    break;
+                case SelectionState.PlayerOneSelection:
+
+                    break;
+                case SelectionState.PlayerTwoSelection:
+
+                    break;
+                case SelectionState.PlayerOneTurn:
+
+                    break;
+                case SelectionState.PlayerTwoTurn:
+
+                    break;
+                default:
+                    Console.WriteLine("Outside the bounds of reality in a non-exsistant state. Or a glitch.");
+                    break;
+
             }
         }
 
@@ -232,7 +299,8 @@ namespace BattleshipGame
             InitializeBlankBuffer();
             topPad = bottomPad = (height - displayfieldHeight) / 2;
             leftPad = rightPad = (width - (playfieldWidth * 2)) / 2; // padding is the total width - playfield * square size, divided by two.
-            selectionIndex = ((0 + topPad) * (width) + (0 + leftPad));
+            highlightedIndex = ((0 + topPad) * (width) + (0 + leftPad));
+            selectedIndex = -1;
             //Get the starting index of the Lower Message Line.
             // Bottom line middle needs to be one less to start on the line and not the next. If even minus 1, if odd it will round down.
             int bottomMiddleLine = bottomPad % 2 == 0 ? (bottomPad / 2) - 1 : bottomPad / 2;
@@ -271,7 +339,7 @@ namespace BattleshipGame
                     index = ReturnIndexSquare(x, y);
 
 
-                    if (index[0] == selectionIndex)
+                    if (index[0] == highlightedIndex)
                     {
                         AssignColor(index, 0x0002);  // Make selection green.
                     }
@@ -300,6 +368,14 @@ namespace BattleshipGame
             bufField[index[1]].Attributes = color;
             bufField[index[2]].Attributes = color;
             bufField[index[3]].Attributes = color;
+        }
+        public enum SelectionState
+        {
+            PlayerOneSelection,
+            PlayerTwoSelection,
+            PlayerOneTurn,
+            PlayerTwoTurn,
+            Initialization
         }
 
     }
