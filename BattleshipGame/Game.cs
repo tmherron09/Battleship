@@ -24,6 +24,9 @@ namespace BattleshipGame
 
 
         // Battlefield Display variables
+        int displayfieldWidth;
+        int displayfieldHeight;
+        int gridSize;
         int topPad;
         int bottomPad;
         int leftPad;  // left and right padding must equal width - (playfield width * square size)
@@ -38,6 +41,7 @@ namespace BattleshipGame
         // Playfield Variables
         int playfieldWidth;
         int playfieldHeight;
+        
 
         // Game variables
         List<Player> players;
@@ -55,6 +59,9 @@ namespace BattleshipGame
             bufField = new CharInfo[width * height];
             playfieldHeight = 20;
             playfieldWidth = 20;
+            gridSize = 2;
+            displayfieldWidth = playfieldHeight * gridSize;
+            displayfieldHeight = playfieldHeight * gridSize;
             downCount = 0; // test variable
             showLowerMessage = true;
             lowerMessage = "";
@@ -93,14 +100,37 @@ namespace BattleshipGame
                     }
                     if(isFirstRound)
                     {
+                        // Declare all ships
+                        string[] ships = new string[] { "Destroyer", "Submarine", "Battleship", "Aircraft Carrier" };
                         //foreach(Player player in players)
                         // Player 1 Setup their board
                         DisplayLowerMessage("Player 1, please choose your starting locations.");
+                        DisplayRighthandMessage(ships);
                         // Player 2 Setup their board
                         isFirstRound = false;
                     }
                 } while (true); // While no winner.
                 Console.ReadLine();
+            }
+        }
+
+        
+        private void DisplayRighthandMessage(string[] displayLines)
+        {
+            int lineStart = (topPad + (displayfieldHeight) / 3) * width;
+            int rightStart = (leftPad + (playfieldWidth * 2) + 2) + lineStart;
+            string[] ships = new string[] { "Destroyer", "Submarine", "Battleship", "Aircraft Carrier" };
+            int nextIndex = 0;
+            foreach (string ship in ships)
+            {
+                foreach (char letter in ship)
+                {
+                    bufField[rightStart + nextIndex].Char.UnicodeChar = letter;
+                    bufField[rightStart + nextIndex].Attributes = 0x0002;
+                    nextIndex++;
+                }
+                nextIndex = 0;
+                rightStart += 2 * width;
             }
         }
 
@@ -178,7 +208,7 @@ namespace BattleshipGame
             {
                 if (playfieldY == 0)
                 {
-                    selectionIndex = selectionIndex + ((playfieldHeight * 2) - 2) * width;
+                    selectionIndex = selectionIndex + ((displayfieldHeight) - 2) * width;
                 }
                 else
                 {
@@ -200,13 +230,13 @@ namespace BattleshipGame
         private void InitializeGame()
         {
             InitializeBlankBuffer();
-            topPad = bottomPad = (height - playfieldHeight * 2) / 2;
+            topPad = bottomPad = (height - displayfieldHeight) / 2;
             leftPad = rightPad = (width - (playfieldWidth * 2)) / 2; // padding is the total width - playfield * square size, divided by two.
             selectionIndex = ((0 + topPad) * (width) + (0 + leftPad));
             //Get the starting index of the Lower Message Line.
             // Bottom line middle needs to be one less to start on the line and not the next. If even minus 1, if odd it will round down.
             int bottomMiddleLine = bottomPad % 2 == 0 ? (bottomPad / 2) - 1 : bottomPad / 2;
-            startLocation = (topPad + bottomMiddleLine + (playfieldHeight * 2)) * width;
+            startLocation = (topPad + bottomMiddleLine + (displayfieldHeight)) * width;
         }
 
         public void DrawToScreen()
