@@ -40,6 +40,8 @@ namespace BattleshipGame
         int playfieldHeight;
 
         // Game variables
+        List<Player> players;
+        int currentPlayer;
         bool isFirstRound;
         bool isChangePlayer;
 
@@ -54,9 +56,10 @@ namespace BattleshipGame
             playfieldHeight = 20;
             playfieldWidth = 20;
             downCount = 0; // test variable
+            showLowerMessage = true;
             lowerMessage = "";
             isFirstRound = true;
-            
+            currentPlayer = 0;
         }
 
         public void RunGame()
@@ -85,12 +88,15 @@ namespace BattleshipGame
                     
                     if(isChangePlayer)
                     {
+                        currentPlayer = (currentPlayer + 1) & 0x0001;
                         isChangePlayer = false;
                     }
                     if(isFirstRound)
                     {
-                        foreach
-
+                        //foreach(Player player in players)
+                        // Player 1 Setup their board
+                        DisplayLowerMessage("Player 1, please choose your starting locations.");
+                        // Player 2 Setup their board
                         isFirstRound = false;
                     }
                 } while (true); // While no winner.
@@ -113,6 +119,15 @@ namespace BattleshipGame
             for(int i = 0; i < lowerMessage.Length; i++)
             {
                 bufField[leftStart + i].Char.UnicodeChar = lowerMessage[i];
+                bufField[leftStart + i].Attributes = 0x0008;
+            }
+        }
+        private void DisplayLowerMessage(string message)
+        {
+            int leftStart = startLocation + (width - message.Length) / 2;
+            for (int i = 0; i < message.Length; i++)
+            {
+                bufField[leftStart + i].Char.UnicodeChar = message[i];
                 bufField[leftStart + i].Attributes = 0x0008;
             }
         }
