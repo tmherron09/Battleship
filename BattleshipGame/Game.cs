@@ -25,8 +25,12 @@ namespace BattleshipGame
 
         // Battlefield Display variables
         int topPad;
+        int bottomPad;
         int leftPad;  // left and right padding must equal width - (playfield width * square size)
         int rightPad;
+        int startLocation;
+        string lowerMessage;
+        bool showLowerMessage;
 
         // Selection Variables
         int selectionIndex;
@@ -34,6 +38,10 @@ namespace BattleshipGame
         // Playfield Variables
         int playfieldWidth;
         int playfieldHeight;
+
+        // Game variables
+        bool isFirstRound;
+        bool isChangePlayer;
 
         public Game(Stream stdOut, SafeFileHandle h, int width, int height)
         {
@@ -46,6 +54,9 @@ namespace BattleshipGame
             playfieldHeight = 20;
             playfieldWidth = 20;
             downCount = 0; // test variable
+            lowerMessage = "";
+            isFirstRound = true;
+            
         }
 
         public void RunGame()
@@ -53,7 +64,6 @@ namespace BattleshipGame
             InitializeGame();
             if (!h.IsInvalid)
             {
-
                 do
                 {
                     // Loop through buf
@@ -64,17 +74,46 @@ namespace BattleshipGame
                         ReadPlayerInput(readKey.Key);
 
                     }
-
                     // ReWrite to bufField
                     WriteToBuffer();
-
+                    if (!showLowerMessage)
+                    {
+                        RemoveLowerMessage();
+                    }
+                    DisplayLowerMessage();
                     DrawToScreen();
+                    
+                    if(isChangePlayer)
+                    {
+                        isChangePlayer = false;
+                    }
+                    if(isFirstRound)
+                    {
+                        foreach
+
+                        isFirstRound = false;
+                    }
                 } while (true); // While no winner.
-
-
-
-
                 Console.ReadLine();
+            }
+        }
+
+        private void RemoveLowerMessage()
+        {
+            for (int i = startLocation; i < startLocation + width; i++)
+            {
+                bufField[i].Char.UnicodeChar = ' ';
+            }
+            lowerMessage = "";
+        }
+
+        private void DisplayLowerMessage()
+        {
+            int leftStart = startLocation + (width - lowerMessage.Length) / 2;
+            for(int i = 0; i < lowerMessage.Length; i++)
+            {
+                bufField[leftStart + i].Char.UnicodeChar = lowerMessage[i];
+                bufField[leftStart + i].Attributes = 0x0008;
             }
         }
 
@@ -131,24 +170,33 @@ namespace BattleshipGame
                     selectionIndex -= 2 * width; ;
                 }
             }
+            else if (readKey == ConsoleKey.Enter)
+            {
+                lowerMessage = "Enter key pressed...";
+                showLowerMessage = true;
+            }
+            else if (readKey == ConsoleKey.Spacebar)
+            {
+                showLowerMessage = false ;
+                isChangePlayer = true;
+            }
         }
 
         private void InitializeGame()
         {
             InitializeBlankBuffer();
-            topPad = (height - playfieldHeight * 2) / 2;
-            //leftPad = 24; // if width 88
-            //rightPad = 24; // if width 88
+            topPad = bottomPad = (height - playfieldHeight * 2) / 2;
             leftPad = rightPad = (width - (playfieldWidth * 2)) / 2; // padding is the total width - playfield * square size, divided by two.
             selectionIndex = ((0 + topPad) * (width) + (0 + leftPad));
-            //selectionIndex = 326;
+            //Get the starting index of the Lower Message Line.
+            // Bottom line middle needs to be one less to start on the line and not the next. If even minus 1, if odd it will round down.
+            int bottomMiddleLine = bottomPad % 2 == 0 ? (bottomPad / 2) - 1 : bottomPad / 2;
+            startLocation = (topPad + bottomMiddleLine + (playfieldHeight * 2)) * width;
         }
 
         public void DrawToScreen()
         {
             SmallRect rectField = new SmallRect() { Left = 0, Top = 0, Right = (short)width, Bottom = (short)height };
-
-
             bool b = Program.WriteConsoleOutput(h, bufField,
                       new Coord() { X = (short)width, Y = (short)height },
                       new Coord() { X = 0, Y = 0 },

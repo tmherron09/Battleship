@@ -9,7 +9,8 @@ namespace BattleshipGame
     abstract class Ship
     {
 
-        public int[][] shipPosition;
+        public int shipBufferLocaltion;
+        public int[] shipPlayFieldXY;
 
         public Ship()
         {
