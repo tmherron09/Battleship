@@ -108,6 +108,7 @@ namespace BattleshipGame
                         //foreach(Player player in players)
                         // Player 1 Setup their board
                         DisplayLowerMessage("Player 1, please choose your starting locations.");
+                        selectionState = SelectionState.PlayerOneSelection;
                         DisplayRighthandMessage(ships, 0x0002);
                         // Player 2 Setup their board
                         isFirstRound = false;
@@ -276,7 +277,7 @@ namespace BattleshipGame
                 case SelectionState.Initialization:
                     break;
                 case SelectionState.PlayerOneSelection:
-
+                    PlayerOneSelectLocations();
                     break;
                 case SelectionState.PlayerTwoSelection:
 
@@ -292,6 +293,11 @@ namespace BattleshipGame
                     break;
 
             }
+        }
+
+        private void PlayerOneSelectLocations()
+        {
+            players[0].ships;
         }
 
         private void InitializeGame()

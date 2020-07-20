@@ -16,7 +16,10 @@ namespace BattleshipGame
 
         public Player()
         {
-
+            ships = new List<Ship> { new Ship("Destroyer", 2), new Ship("Submarine", 3), new Ship("Battleship", 4), new Ship("Aircraft Carrier", 5) };
+            misses = new List<int>();
+            hits = new List<int>();
+            sunkShips = new List<int>();
         }
 
         public void CheckHit()

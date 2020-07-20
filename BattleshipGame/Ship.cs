@@ -6,21 +6,22 @@ using System.Threading.Tasks;
 
 namespace BattleshipGame
 {
-    abstract class Ship
+    class Ship
     {
-
+        string name;
+        int length;
+        int health;
         public int shipBufferLocaltion;
         public int[] shipPlayFieldXY;
 
-        public Ship()
+        public Ship(string name, int length)
         {
-            
+            this.name = name;
+            this.length = length;
+            health = length;
         }
         
-        /*
-         Vector<int>  
-         
-          */
+        
         
     }
 }
