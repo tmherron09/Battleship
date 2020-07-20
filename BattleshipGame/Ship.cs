@@ -8,9 +8,8 @@ namespace BattleshipGame
 {
     abstract class Ship
     {
-        
-        public int[] shipPosition;
-        public int[,] positionArray;
+
+        public int[][] shipPosition;
 
         public Ship()
         {
