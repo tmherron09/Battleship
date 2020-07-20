@@ -36,8 +36,11 @@ namespace BattleshipGame
         bool showLowerMessage;
 
         // Selection Variables
+        public SelectionState selectionState;
+        public PlacementDirection placementDirection;
         int highlightedIndex;
         int selectedIndex;
+        Ship shipBeingPlace;
 
         // Playfield Variables
         int playfieldWidth;
@@ -48,7 +51,7 @@ namespace BattleshipGame
         List<Player> players;
         int currentPlayer;
         bool isChangePlayer;
-        public SelectionState selectionState;
+        
 
         public Game(Stream stdOut, SafeFileHandle h, int width, int height)
         {
@@ -68,6 +71,7 @@ namespace BattleshipGame
             lowerMessage = "";
             currentPlayer = 0;
             selectionState = SelectionState.Initialization;
+            placementDirection = PlacementDirection.Right;
         }
 
         public void RunGame()
@@ -107,6 +111,8 @@ namespace BattleshipGame
                         // Player 1 Setup their board
                         DisplayLowerMessage("Player 1, please choose your starting locations.");
                         selectionState = SelectionState.PlayerOneSelection;
+                        placementDirection = PlacementDirection.Right;
+                        shipBeingPlace = players[0].ships[0];
                         DisplayRighthandMessage(ships, 0x0002);
                         // Player 2 Setup their board
 
@@ -266,6 +272,11 @@ namespace BattleshipGame
                 RemoveRighthandMessage();
                 isChangePlayer = true;
             }
+            else if(readKey == ConsoleKey.R)
+            {
+                placementDirection = 
+                    placementDirection == PlacementDirection.Right ? PlacementDirection.Down : (placementDirection == PlacementDirection.Down ? PlacementDirection.Left : (placementDirection == PlacementDirection.Left ? PlacementDirection.Up : PlacementDirection.Right));
+            }
         }
 
         private void SelectionStateMachine()
@@ -344,7 +355,14 @@ namespace BattleshipGame
         public void WriteToBuffer()
         {
             int[] index = new int[4];
-
+            for (int y = 0; y < playfieldHeight; y++) // 20 = playfield height
+            {
+                for (int x = 0; x < playfieldWidth; x++) // 20 = playfield width
+                {
+                    index = ReturnIndexSquare(x, y);
+                    AssignColor(index, 0x0001);
+                }
+            }
 
             for (int y = 0; y < playfieldHeight; y++) // 20 = playfield height
             {
@@ -354,14 +372,72 @@ namespace BattleshipGame
                     {
                         case SelectionState.PlayerOneSelection:
                             index = ReturnIndexSquare(x, y);
-                            if (index[0] == highlightedIndex)
+                            if (index[0] == selectedIndex)
                             {
-                                AssignColor(index, 0x0002);  // Make selection green.
+                                AssignColor(index, 0x0004);  
+                                if(placementDirection == PlacementDirection.Right)
+                                {
+                                    if(CheckIfRightPlacementValid(shipBeingPlace.length))
+                                    {
+                                        for (int i = 1; i < shipBeingPlace.length; i++)
+                                        {
+                                            index = ReturnIndexSquare(x + i, y);
+                                            AssignColor(index, 0x004);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        placementDirection = PlacementDirection.Down;
+                                    }
+                                }
+                                if (placementDirection == PlacementDirection.Down)
+                                {
+                                    if (CheckIfDownPlacementValid(shipBeingPlace.length))
+                                    {
+                                        for (int i = 1; i < shipBeingPlace.length; i++)
+                                        {
+                                            index = ReturnIndexSquare(x, y + i);
+                                            AssignColor(index, 0x004);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        placementDirection = PlacementDirection.Left;
+                                    }
+                                }
+                                if (placementDirection == PlacementDirection.Left)
+                                {
+                                    if (CheckIfLeftPlacementValid(shipBeingPlace.length))
+                                    {
+                                        for (int i = 1; i < shipBeingPlace.length; i++)
+                                        {
+                                            index = ReturnIndexSquare(x - i, y);
+                                            AssignColor(index, 0x004);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        placementDirection = PlacementDirection.Up;
+                                    }
+                                }
+                                if (placementDirection == PlacementDirection.Up)
+                                {
+                                    if (CheckIfDownPlacementValid(shipBeingPlace.length))
+                                    {
+                                        for (int i = 1; i < shipBeingPlace.length; i++)
+                                        {
+                                            index = ReturnIndexSquare(x, y + i);
+                                            AssignColor(index, 0x004);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        placementDirection = PlacementDirection.Right;
+                                    }
+                                }
+
                             }
-                            else
-                            {
-                                AssignColor(index, 0x0001); // Make non-selected blue
-                            }
+                            
                             break;
 
                             break;
@@ -464,6 +540,13 @@ namespace BattleshipGame
             PlayerOneTurn,
             PlayerTwoTurn,
             Initialization
+        }
+        public enum PlacementDirection : int
+        {
+            Right,
+            Down,
+            Left,
+            Up
         }
 
     }
