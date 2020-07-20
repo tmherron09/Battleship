@@ -51,7 +51,7 @@ namespace BattleshipGame
         List<Player> players;
         int currentPlayer;
         bool isChangePlayer;
-        
+
 
         public Game(Stream stdOut, SafeFileHandle h, int width, int height)
         {
@@ -103,25 +103,31 @@ namespace BattleshipGame
                         currentPlayer = (currentPlayer + 1) & 0x0001;
                         isChangePlayer = false;
                     }
-                    if (selectionState == SelectionState.Initialization || selectionState == SelectionState.PlayerOneSelection || selectionState == SelectionState.PlayerTwoSelection)
+                    switch (selectionState)
                     {
-                        // Declare all ships
-                        string[] ships = new string[] { "Destroyer", "Submarine", "Battleship", "Aircraft Carrier" };
-                        //foreach(Player player in players)
-                        // Player 1 Setup their board
-                        DisplayLowerMessage("Player 1, please choose your starting locations.");
-                        selectionState = SelectionState.PlayerOneSelection;
-                        placementDirection = PlacementDirection.Right;
-                        shipBeingPlace = players[0].ships[0];
-                        DisplayRighthandMessage(ships, 0x0002);
-                        // Player 2 Setup their board
-
+                        case SelectionState.Initialization:
+                            PlayerOneInitialize();
+                            break;
+                        case SelectionState.PlayerTwoSelection:
+                            break;
                     }
+                    SelectionStateMachine();
                 } while (true); // While no winner.
                 Console.ReadLine();
             }
         }
 
+        private void PlayerOneInitialize()
+        {
+            // Declare all ships
+            string[] ships = new string[] { "Destroyer", "Submarine", "Battleship", "Aircraft Carrier" };
+            //foreach(Player player in players)
+            // Player 1 Setup their board
+            DisplayLowerMessage("Player 1, please choose your starting locations.");
+            selectionState = SelectionState.PlayerOneSelection;
+            shipBeingPlace = players[currentPlayer].ships[0];
+            DisplayRighthandMessage(ships, 0x0002);
+        }
 
         private void DisplayRighthandMessage(string message, short color)
         {
@@ -262,9 +268,14 @@ namespace BattleshipGame
             }
             else if (readKey == ConsoleKey.Enter)
             {
-                selectedIndex = highlightedIndex;
-                SelectionStateMachine();
-
+                switch (selectionState)
+                {
+                    case SelectionState.PlayerOneSelection:
+                        PlayerOneSelectLocations(new int[] { playfieldX, playfieldY });
+                        break;
+                    default:
+                        break;
+                }
             }
             else if (readKey == ConsoleKey.Spacebar)
             {
@@ -272,9 +283,9 @@ namespace BattleshipGame
                 RemoveRighthandMessage();
                 isChangePlayer = true;
             }
-            else if(readKey == ConsoleKey.R)
+            else if (readKey == ConsoleKey.R)
             {
-                placementDirection = 
+                placementDirection =
                     placementDirection == PlacementDirection.Right ? PlacementDirection.Down : (placementDirection == PlacementDirection.Down ? PlacementDirection.Left : (placementDirection == PlacementDirection.Left ? PlacementDirection.Up : PlacementDirection.Right));
             }
         }
@@ -286,7 +297,7 @@ namespace BattleshipGame
                 case SelectionState.Initialization:
                     break;
                 case SelectionState.PlayerOneSelection:
-                    PlayerOneSelectLocations();
+
                     break;
                 case SelectionState.PlayerTwoSelection:
 
@@ -304,15 +315,16 @@ namespace BattleshipGame
             }
         }
 
-        private void PlayerOneSelectLocations()
+        private void PlayerOneSelectLocations(int[] playfieldLocation)
         {
+            
             foreach (Ship ship in players[currentPlayer].ships)
             {
                 if (!ship.isPlaced)
                 {
-                    if (!ship.isBeingPlace)
+                    if (ship.isBeingPlace)
                     {
-                        CheckIfValidPlacement(ship.length);
+                        
                         break;
                     }
                 }
@@ -330,6 +342,10 @@ namespace BattleshipGame
             // Bottom line middle needs to be one less to start on the line and not the next. If even minus 1, if odd it will round down.
             int bottomMiddleLine = bottomPad % 2 == 0 ? (bottomPad / 2) - 1 : bottomPad / 2;
             startLocation = (topPad + bottomMiddleLine + (displayfieldHeight)) * width;
+
+            players = new List<Player>();
+            players.Add(new Human());
+            players.Add(new Human());
         }
 
         public void DrawToScreen()
@@ -371,78 +387,93 @@ namespace BattleshipGame
                     switch (selectionState)
                     {
                         case SelectionState.PlayerOneSelection:
+                            selectedIndex = highlightedIndex;
                             index = ReturnIndexSquare(x, y);
                             if (index[0] == selectedIndex)
                             {
-                                AssignColor(index, 0x0004);  
-                                if(placementDirection == PlacementDirection.Right)
+                                AssignColor(index, 0x0004);
+                                switch (placementDirection)
                                 {
-                                    if(CheckIfRightPlacementValid(shipBeingPlace.length))
-                                    {
-                                        for (int i = 1; i < shipBeingPlace.length; i++)
+                                    case PlacementDirection.Right:
                                         {
-                                            index = ReturnIndexSquare(x + i, y);
-                                            AssignColor(index, 0x004);
+                                            if (CheckIfRightPlacementValid(shipBeingPlace.length))
+                                            {
+                                                for (int i = 1; i < shipBeingPlace.length; i++)
+                                                {
+                                                    index = ReturnIndexSquare(x + i, y);
+                                                    AssignColor(index, 0x004);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                placementDirection = PlacementDirection.Down;
+                                            }
+
+                                            break;
                                         }
-                                    }
-                                    else
-                                    {
-                                        placementDirection = PlacementDirection.Down;
-                                    }
-                                }
-                                if (placementDirection == PlacementDirection.Down)
-                                {
-                                    if (CheckIfDownPlacementValid(shipBeingPlace.length))
-                                    {
-                                        for (int i = 1; i < shipBeingPlace.length; i++)
+
+                                    case PlacementDirection.Down:
                                         {
-                                            index = ReturnIndexSquare(x, y + i);
-                                            AssignColor(index, 0x004);
+                                            if (CheckIfDownPlacementValid(shipBeingPlace.length))
+                                            {
+                                                for (int i = 1; i < shipBeingPlace.length; i++)
+                                                {
+                                                    index = ReturnIndexSquare(x, y + i);
+                                                    AssignColor(index, 0x004);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                placementDirection = PlacementDirection.Left;
+                                            }
+
+                                            break;
                                         }
-                                    }
-                                    else
-                                    {
-                                        placementDirection = PlacementDirection.Left;
-                                    }
-                                }
-                                if (placementDirection == PlacementDirection.Left)
-                                {
-                                    if (CheckIfLeftPlacementValid(shipBeingPlace.length))
-                                    {
-                                        for (int i = 1; i < shipBeingPlace.length; i++)
+
+                                    case PlacementDirection.Left:
                                         {
-                                            index = ReturnIndexSquare(x - i, y);
-                                            AssignColor(index, 0x004);
+                                            if (CheckIfLeftPlacementValid(shipBeingPlace.length))
+                                            {
+                                                for (int i = 1; i < shipBeingPlace.length; i++)
+                                                {
+                                                    index = ReturnIndexSquare(x - i, y);
+                                                    AssignColor(index, 0x004);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                placementDirection = PlacementDirection.Up;
+                                            }
+
+                                            break;
                                         }
-                                    }
-                                    else
-                                    {
-                                        placementDirection = PlacementDirection.Up;
-                                    }
-                                }
-                                if (placementDirection == PlacementDirection.Up)
-                                {
-                                    if (CheckIfDownPlacementValid(shipBeingPlace.length))
-                                    {
-                                        for (int i = 1; i < shipBeingPlace.length; i++)
+
+                                    case PlacementDirection.Up:
                                         {
-                                            index = ReturnIndexSquare(x, y + i);
-                                            AssignColor(index, 0x004);
+                                            if (CheckIfUpPlacementValid(shipBeingPlace.length))
+                                            {
+                                                for (int i = 1; i < shipBeingPlace.length; i++)
+                                                {
+                                                    index = ReturnIndexSquare(x, y - i);
+                                                    AssignColor(index, 0x004);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                placementDirection = PlacementDirection.Right;
+                                            }
+
+                                            break;
                                         }
-                                    }
-                                    else
-                                    {
-                                        placementDirection = PlacementDirection.Right;
-                                    }
                                 }
 
                             }
-                            
+
                             break;
 
                             break;
                         case SelectionState.PlayerTwoSelection:
-                            
+
                             break;
                         case SelectionState.PlayerOneTurn:
                         case SelectionState.PlayerTwoTurn:
@@ -482,7 +513,7 @@ namespace BattleshipGame
             int selectionZeroed = ((topPad * width) + leftPad);
             int displayY = ((selectedIndex - selectionZeroed) / (width)) % width;
 
-            if ((displayY - (length * gridSize) + gridSize > topPad))
+            if ((displayY - (length * gridSize) + 2 >= 0))
             {
                 return true;
             }
