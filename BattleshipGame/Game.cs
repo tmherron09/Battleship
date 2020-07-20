@@ -47,7 +47,6 @@ namespace BattleshipGame
         // Game variables
         List<Player> players;
         int currentPlayer;
-        bool isFirstRound;
         bool isChangePlayer;
         public SelectionState selectionState;
 
@@ -67,7 +66,6 @@ namespace BattleshipGame
             downCount = 0; // test variable
             showLowerMessage = true;
             lowerMessage = "";
-            isFirstRound = true;
             currentPlayer = 0;
             selectionState = SelectionState.Initialization;
         }
@@ -101,7 +99,7 @@ namespace BattleshipGame
                         currentPlayer = (currentPlayer + 1) & 0x0001;
                         isChangePlayer = false;
                     }
-                    if (isFirstRound)
+                    if (selectionState == SelectionState.Initialization || selectionState == SelectionState.PlayerOneSelection || selectionState == SelectionState.PlayerTwoSelection)
                     {
                         // Declare all ships
                         string[] ships = new string[] { "Destroyer", "Submarine", "Battleship", "Aircraft Carrier" };
@@ -111,7 +109,7 @@ namespace BattleshipGame
                         selectionState = SelectionState.PlayerOneSelection;
                         DisplayRighthandMessage(ships, 0x0002);
                         // Player 2 Setup their board
-                        isFirstRound = false;
+
                     }
                 } while (true); // While no winner.
                 Console.ReadLine();
@@ -260,7 +258,7 @@ namespace BattleshipGame
             {
                 selectedIndex = highlightedIndex;
                 SelectionStateMachine();
-                
+
             }
             else if (readKey == ConsoleKey.Spacebar)
             {
@@ -272,7 +270,7 @@ namespace BattleshipGame
 
         private void SelectionStateMachine()
         {
-            switch(selectionState)
+            switch (selectionState)
             {
                 case SelectionState.Initialization:
                     break;
@@ -297,7 +295,17 @@ namespace BattleshipGame
 
         private void PlayerOneSelectLocations()
         {
-            players[0].ships;
+            foreach (Ship ship in players[currentPlayer].ships)
+            {
+                if (!ship.isPlaced)
+                {
+                    if (!ship.isBeingPlace)
+                    {
+                        CheckIfValidPlacement(ship.length);
+                        break;
+                    }
+                }
+            }
         }
 
         private void InitializeGame()
@@ -342,21 +350,95 @@ namespace BattleshipGame
             {
                 for (int x = 0; x < playfieldWidth; x++) // 20 = playfield width
                 {
-                    index = ReturnIndexSquare(x, y);
-
-
-                    if (index[0] == highlightedIndex)
+                    switch (selectionState)
                     {
-                        AssignColor(index, 0x0002);  // Make selection green.
-                    }
-                    else
-                    {
-                        AssignColor(index, 0x0001); // Make non-selected blue
+                        case SelectionState.PlayerOneSelection:
+                            index = ReturnIndexSquare(x, y);
+                            if (index[0] == highlightedIndex)
+                            {
+                                AssignColor(index, 0x0002);  // Make selection green.
+                            }
+                            else
+                            {
+                                AssignColor(index, 0x0001); // Make non-selected blue
+                            }
+                            break;
+
+                            break;
+                        case SelectionState.PlayerTwoSelection:
+                            
+                            break;
+                        case SelectionState.PlayerOneTurn:
+                        case SelectionState.PlayerTwoTurn:
+
+                            index = ReturnIndexSquare(x, y);
+                            if (index[0] == highlightedIndex)
+                            {
+                                AssignColor(index, 0x0002);  // Make selection green.
+                            }
+                            else
+                            {
+                                AssignColor(index, 0x0001); // Make non-selected blue
+                            }
+                            break;
+
+                        default:
+                            break;
                     }
                 }
             }
 
 
+        }
+
+        private bool CheckIfValidPlacement(int length)
+        {
+            bool[] conditions = new bool[4];
+            conditions[0] = CheckIfRightPlacementValid(length);
+            conditions[1] = CheckIfLeftPlacementValid(length);
+            conditions[2] = CheckIfUpPlacementValid(length);
+            conditions[3] = CheckIfDownPlacementValid(length);
+            return conditions[0] || conditions[1] || conditions[2] || conditions[3];
+        }
+
+        private bool CheckIfUpPlacementValid(int length)
+        {
+            int selectionZeroed = ((topPad * width) + leftPad);
+            int displayY = ((selectedIndex - selectionZeroed) / (width)) % width;
+
+            if ((displayY - (length * gridSize) + gridSize > topPad))
+            {
+                return true;
+            }
+            return false;
+        }
+        private bool CheckIfDownPlacementValid(int length)
+        {
+            int selectionZeroed = ((topPad * width) + leftPad);
+            int displayY = ((selectedIndex - selectionZeroed) / (width)) % width;
+
+            if ((displayY + (length * gridSize) + gridSize < topPad + displayfieldHeight - 1))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool CheckIfRightPlacementValid(int length)
+        {
+            if ((selectedIndex % width) + (length * gridSize) - gridSize < width - leftPad)
+            {
+                return true;
+            }
+            return false;
+        }
+        public bool CheckIfLeftPlacementValid(int length)
+        {
+            if ((selectedIndex % width) - (length * gridSize) + gridSize > rightPad - 1)
+            {
+                return true;
+            }
+            return false;
         }
 
         public int[] ReturnIndexSquare(int x, int y)
